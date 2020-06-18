@@ -1,0 +1,23 @@
+
+- KLN can't take #/" " currently (workaround: place it in ())
+- Hex numbers in BNF generator doesn't work
+- Or priority is awkward (would be better for it to take a sequence of rules
+- Handling numeric ranges in sets: [#x01-#x08]
+- Consider switching to using "^" for NOT in sets
+- Quoting isn't done properly: '"^^' turns into req ""^^" and "'" turns into #'''
+- Handle escapes in "req"/"try"
+- "Match FOO until BAR batches" (with priority for bar:
+    (Char* - "]]>") -> #1
+    Translates into:
+       try "]]>"
+       beq _1
+       ...
+    :_1
+       err
+       
+    NOTE: "*" applied to "outer" production not to char itself. Translates
+    to English like this:
+
+      Match as many Char's as possible such that the resulting string does
+      not contain any characters that makes up the pattern "]]>"
+

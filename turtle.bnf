@@ -1,0 +1,52 @@
+%triggers {
+   DIRECTIVE = 1 .
+   SUBJECT = 3 .
+   VERB = 4 .
+   OBJECT = 5 .
+   LSQUARE = 6 .
+   RSQUARE = 7 .
+   STARTCITEM = 8 .
+   ENDCITEM = 9 .
+   ENDCOLL = 10 .
+}
+
+turtleDoc    ::= statement* !"Expected eof" EOF .
+statement    ::= (directive ws* '.' ws*) | (triples ws* '.' ws*) | comment | ws+ .
+directive    ::= '@prefix' !"Expected valid prefix directive" 
+                 ws+ prefixName? ':' ws+ 
+                 !"Expected uriref" uriref /DIRECTIVE/ .
+triples      ::= subject !"Expected predicate/object pairs" ws+ predicateObjectList .
+predicateObjectList
+             ::= verb ws+ objectList ( ws* ';' ws* verb ws+ objectList )* (ws* ';')? .
+objectList   ::= object (ws* ',' ws* object)* .
+verb 	     ::= predicate | ('a' -> #3) /VERB/ .
+comment      ::= '#' [~\r\n]* .
+subject      ::= resource | blank /SUBJECT/ .
+predicate    ::= resource .
+object 	     ::= resource | blank | literal /OBJECT/ .
+literal      ::= langString | datatypeString | integer .
+langString   ::= '"' string '"' ( '@' language )? .
+datatypeString
+             ::= '"' string #34 '^^' resource .
+blank        ::= nodeID | ('[]' /LSQUARE/ /RSQUARE/) | ('[' /LSQUARE/ ws* predicateObjectList ws* ']' /RSQUARE/) | collection .
+itemList     ::= /STARTCITEM/ object /ENDCITEM/ (ws+ /STARTCITEM/ object /ENDCITEM/)* .
+collection   ::= '(' ws* itemList? ws* ')' /ENDCOLL/ .
+resource     ::= uriref | qname .
+nodeID 	     ::= ('_') -> #1 ':' name .
+qname 	     ::= prefixName? ':' name? .
+
+
+nameStartChar ::= [A-Z] | "_" | [a-z] .
+nameChar     ::= nameStartChar | '-' | [0-9] .
+
+relativeURI  ::= [~>]* .
+ws           ::= #9 | #10 | #13 | #32 .
+character    ::= ANY .
+
+uriref 	     ::= ('<' !"Expected URI terminated with '>'" relativeURI '>') -> #2 .
+prefixName   ::= ([A-Za-z] nameChar*) -> #1 .
+
+integer      ::= [0-9]+ -> #4 .
+string 	     ::= (('\\' ANY) | [~\\"])* -> #5.
+language     ::= ([a-z]+ ('-' [a-z0-9]+ )*) -> #6 .
+name 	     ::= (nameStartChar nameChar*) -> #7 .

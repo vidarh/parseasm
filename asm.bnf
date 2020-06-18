@@ -1,0 +1,32 @@
+
+%triggers {
+   LINE = 1 .
+}
+
+program  ::= line* !"Expected EOF" EOF .
+
+line     ::= ws? label? ws? cmd? ws? comment? #10 /LINE/ .
+
+cmd      ::= branches | argless | strcmds | cmp | trgsto | reqtry .
+
+branches ::= ("beq" | "bne" | "jsr" | "kln" | "blt" | "bgt" | "jmp") -> #2 ws !"Expected address" address .
+argless  ::= ("eof" | "err" | "ret" | "clr" | "nop" | "eat") -> #2 .
+strcmds  ::= ("brk" | "cut" | "str" ) -> #2 ws !"Expected string" string .
+trgsto   ::= ("trg" | "sto" ) -> #2 ws !"Expected number" number -> #4 .
+reqtry   ::= ("req" | "try" ) -> #2 ws !"Expected address, string or number" (address | string | (number -> #4)) .
+
+cmp      ::= (("cmp.r" -> #2 ws number -> #4 ws? "," ws? number -> #5) 
+             |("cmp"   -> #2 ws number -> #4 )) .
+
+
+string   ::= ('"' ((("\\" ANY) | [~"])*) -> #6 '"')
+           | ("'" ((("\\" ANY) | [~'])*) -> #6 "'") .
+
+comment  ::= ";" [~\n]* .
+
+label    ::= ":" !"Expected valid label declaration" ([a-zA-Z][a-zA-Z0-9_]*) -> #1 .
+address  ::= "$" !"Expected valid label referebce"   ([a-zA-Z][a-zA-Z0-9_]*) -> #3 .
+number   ::= "#" !"Expected valid number" ("'" (("\\" ANY) | [~\\]) "'") | [0-9]+ .
+
+ws       ::= (' ' | #9 | #13)+ .
+

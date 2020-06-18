@@ -1,0 +1,59 @@
+
+%triggers {
+   LP = 1 .
+   RP = 2 .
+   CUT = 3 .
+   CALL = 4 .
+   TDEF = 6 .
+   PRODL = 7 .
+   PRODR = 8 .
+   ORR = 13 .
+   STORE = 14 .
+   EXP = 15 .
+   OR = 16 .
+   RULES = 17 .
+}
+
+
+bnf          ::= ws* triggers? production* !"EOF Expected" EOF .
+triggers     ::= "%triggers" ws* "{" ws* tdef* "}" ws* .
+tdef         ::= name ws* "=" ws* number ws* "." ws* /TDEF/ .
+
+production   ::= name /PRODL/ ws* "::=" (ws* rule)* ws* "." ws* /PRODR/ .
+rule         ::= /RULES/ or_expr .
+
+or_expr      ::= store_expr ws* ("|" !"Expected '|' expression" ws* /OR/ or_expr /ORR/)? .
+store_expr   ::= post_expr ws* ("->" !"Expected storage slot (number)" ws* const /STORE/ )? .
+post_expr    ::= cut 
+               | call 
+	       | (primary_expr ws* (('?' | '*' | '+') -> #7)? /EXP/) .
+
+primary_expr ::= paren_expr | keywords | name
+               | string | const | set .
+
+paren_expr   ::= "(" /LP/ ws* 
+                 !"Expected at least one rule inside parentheses" 
+		 rule+ ws* 
+		 !"Expected ')'"
+		 ")" /RP/ .
+		 
+
+cut          ::= "!" -> #7 !"Expected string" string /CUT/.
+call         ::= "/" -> #7 (number|name) "/" /CALL/.
+const        ::= "#" number .
+
+; --- "Tokens"
+string       ::= ('"' [~"]* -> #6 '"') | ("'" [~']* -> #6 "'") .
+
+keywords     ::= ("ANY" | "EOF") -> #1 .
+	   
+name         ::= ([a-zA-Z][a-zA-Z0-9_]*) -> #2 .
+
+number       ::= base10 | base16 .
+base10       ::= [0-9]+ -> #3 .
+base16       ::= 'x' [0-9a-fA-F]+ -> #4 . ; Not properly supported yet
+
+set          ::= '[' ('~'? ("\\]"|[~\]])*) -> #5 ']' .
+
+ws           ::= ' ' | #9 | #13 | #10  | (';' [~\n]* #10) .
+
